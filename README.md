@@ -57,8 +57,8 @@ Maybach-OS
 ### 安装
 
 ```bash
-git clone https://github.com/MaybachS580/Maybach-OS.git
-cd Maybach-OS
+git clone https://github.com/MaybachS580/maybach-os.git
+cd maybach-os
 pip install -e .
 ```
 
@@ -81,6 +81,28 @@ python main.py run --task trend_report
 # 定时模式（后台持续运行）
 python main.py daemon
 ```
+
+### 即开即用示例
+
+```bash
+# 每日情报推送（5路源：HN + 36kr + 少数派 + TechCrunch + Product Hunt）
+# 支持微信推送、锁屏检测、重试逻辑
+python examples/daily_intel.py
+```
+
+---
+
+## 情报源（5路）
+
+| 源 | 类型 | 特色 |
+|----|------|------|
+| Hacker News | API | 全球科技创投热点 |
+| 36kr | RSS | 国内创业融资第一手 |
+| 少数派 | RSS | 独立开发 / 工具测评 |
+| TechCrunch | RSS | 国际科技大厂动态 |
+| Product Hunt | Atom RSS | 全球最新产品发布 |
+
+**评分逻辑：** 关键词命中 +3分 → 热词命中 +5分 → HN高票加权 → Top 8 推送到微信
 
 ---
 
