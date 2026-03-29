@@ -257,6 +257,98 @@ class TrendAnalyzer:
         )
 
 
+class RSSAggregator:
+    """
+    RSS 订阅源聚合器
+    支持多源并行抓取 + 关键词过滤评分
+    """
+
+    SOURCES = {
+        "hn":    "https://hacker-news.firebaseio.com/v0/topstories.json",
+        "36kr":  "https://36kr.com/feed",
+        "sspai": "https://sspai.com/feed",
+        "tc":    "https://techcrunch.com/feed/",
+        "ph":    "https://www.producthunt.com/feed",
+    }
+
+    KEYWORDS = ["AI", "LLM", "大模型", "创业", "融资", "副业", "变现",
+                "indie hacker", "saas", "startup", "launch", "开源"]
+
+    def __init__(self):
+        import requests
+        self.requests = requests
+
+    def fetch_all(self, top_n=20):
+        """并行抓取所有源"""
+        import concurrent.futures, time
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
+            futures = {ex.submit(self._fetch_source, k): k for k in self.SOURCES}
+            for f in concurrent.futures.as_completed(futures):
+                k = futures[f]
+                try:
+                    results[k] = f.result()
+                except Exception as e:
+                    results[k] = []
+        return results
+
+    def _fetch_source(self, key):
+        import re
+        try:
+            if key == "hn":
+                r = self.requests.get(self.SOURCES[key], timeout=10)
+                ids = r.json()[:20]
+                items = []
+                for sid in ids:
+                    try:
+                        sr = self.requests.get(
+                            f"https://hacker-news.firebaseio.com/v0/item/{sid}.json", timeout=8)
+                        item = sr.json()
+                        if item and item.get("title"):
+                            items.append({
+                                "title": item["title"],
+                                "url": item.get("url", f"https://news.ycombinator.com/item?id={sid}"),
+                                "score": item.get("score", 0),
+                                "source": "Hacker News",
+                            })
+                    except:
+                        pass
+                    time.sleep(0.08)
+                return items
+            else:
+                r = self.requests.get(self.SOURCES[key],
+                                      headers={"User-Agent": "Mozilla/5.0"}, timeout=12)
+                text = r.text
+                titles = re.findall(r'<title>(.*?)</title>', text)
+                links = []
+                if key == "36kr":
+                    links = re.findall(r'<link><!\[CDATA\[(https://36kr\.com/p/\d+[^]]*)\]\]></link>', text)
+                elif key == "sspai":
+                    links = re.findall(r'<link>(https://[^<\s]+)</link>', text)
+                elif key == "tc":
+                    links = re.findall(r'<link>(https://techcrunch\.com/[^<\s]+)</link>', text)
+                elif key == "ph":
+                    links = re.findall(r'<link[^>]+alternate[^>]+href="([^"]+)"', text)
+                    links = [l for l in links if "/products/" in l]
+                source_map = {"36kr": "36kr", "sspai": "少数派", "tc": "TechCrunch", "ph": "Product Hunt"}
+                src = source_map.get(key, key)
+                score_val = 50 if key != "hn" else 0
+                return [{"title": t.strip(), "url": l.strip(), "score": score_val, "source": src}
+                        for t, l in zip(titles[1:], links)]
+        except Exception:
+            return []
+
+    def filter_and_rank(self, all_articles, top_n=8):
+        def score(a):
+            t = a["title"].lower()
+            s = sum(3 for kw in self.KEYWORDS if kw.lower() in t)
+            if a.get("score", 0) > 100:
+                s += a["score"] // 50
+            return s
+        scored = sorted([(score(a), a) for a in all_articles], key=lambda x: x[0], reverse=True)
+        return [a for s, a in scored if s >= 3][:top_n]
+
+
 class CrawlerFramework:
     """
     通用爬虫框架
