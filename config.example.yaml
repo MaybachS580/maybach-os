@@ -1,0 +1,62 @@
+# Maybach-OS 配置文件
+# 复制此文件为 config.yaml，然后填入真实密钥
+
+# ──────────────────────────────── 通用设置 ────────────────────────────────
+app:
+  name: "Maybach-OS"
+  version: "0.1.0"
+  mode: "daemon"  # daemon | cli
+  log_level: "INFO"
+  memory_storage: "memory.json"
+
+# ──────────────────────────────── 微信推送 ────────────────────────────────
+# 使用 pyautogui 坐标方案（需先校准）
+wechat:
+  enabled: true
+  default_contact: "文件传输助手"
+  # 坐标（需要根据实际屏幕校准）
+  search_icon_x: 386
+  search_icon_y: 462
+  input_x: 597
+  input_y: 720
+  send_x: 1034
+  send_y: 773
+
+# ──────────────────────────────── 飞书推送 ────────────────────────────────
+feishu:
+  enabled: false
+  app_id: ""        # 飞书自建应用的 App ID
+  app_secret: ""    # 飞书自建应用的 App Secret
+  default_chat_id: ""  # 默认群 ID 或 open_id
+
+# ──────────────────────────────── 邮件推送 ────────────────────────────────
+email:
+  enabled: false
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_username: "your@email.com"
+  smtp_password: "your-app-password"  # Gmail 需要应用专用密码
+
+# ──────────────────────────────── 商业情报 ────────────────────────────────
+intelligence:
+  default_keyword: "AI创业 副业"
+  default_days: 7
+  default_engines:
+    - baidu
+    - bing
+    - duckduckgo
+  opportunity_keywords:
+    - 红利
+    - 风口
+    - 爆发
+    - 增长
+    - 赚钱
+    - 补贴
+    - 扶持
+    - 新赛道
+
+# ──────────────────────────────── 定时任务 ────────────────────────────────
+scheduler:
+  enabled: true
+  heartbeat_interval: 3600  # 心跳间隔（秒）
+  trend_report_schedule: "0 9 * * *"  # cron 格式，每天9点生成报告
